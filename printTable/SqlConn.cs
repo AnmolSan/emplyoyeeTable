@@ -107,9 +107,10 @@ namespace printTable
         {
             var cmd = new SqlCommand();
             cmd.CommandType = CommandType.Text;
-            cmd.CommandText = "SELECT * FROM empTable WHERE Id ="+id+" AND isDelete = 0;";
+            cmd.CommandText = "SELECT * FROM empTable WHERE Id ="+id;
             cmd.Connection = Conn();
             var dataRead = cmd.ExecuteReader();
+            dataRead.Read();
             return new Employee
             {
                 Id = (int) dataRead["Id"],
@@ -143,7 +144,7 @@ namespace printTable
         {
             var cmd = new SqlCommand();
             cmd.CommandType = CommandType.Text;
-            cmd.CommandText = "SELECT * FROM empTable WHERE DOB = FLOOR(DATEDIFF(DAY, DOB, GETDATE()) / 365.25) "+compareOption+"= "+filterByNumber+ " AND isDelete = 0;";
+            cmd.CommandText = "SELECT * FROM empTable WHERE DOB = (FLOOR(DATEDIFF(DAY, DOB, GETDATE()) / 365.25)) "+compareOption+"= "+filterByNumber+ " AND isDelete = 0;";
             cmd.Connection = Conn();
             var dataRead = cmd.ExecuteReader();
             var employees = new List<Employee>();
@@ -164,8 +165,10 @@ namespace printTable
         public static void SqlUpdate(Employee employee, int id)
         {
             var cmd = new SqlCommand();
+            var dateOnly = employee.DateOfBirth.Date;
             cmd.CommandType = CommandType.Text;
-            cmd.CommandText = "UPDATE empTable SET [Id = "+employee.Id+",Name = "+employee.Name+",DOB = "+employee.DateOfBirth+",isDelete = "+IsDeleted(employee.IsDelete)+"] WHERE Id = "+id+";";
+            cmd.CommandText = "UPDATE empTable SET Id = "+employee.Id+",Name = '"+employee.Name+"',DOB = '"+dateOnly.ToString("MM/dd/yyyy")+"' ,isDelete = "+IsDeleted(employee.IsDelete)+" WHERE Id ="+id;
+            Console.WriteLine("Database Updated");
             cmd.Connection = Conn();
             cmd.ExecuteNonQuery();
         }
@@ -183,30 +186,5 @@ namespace printTable
                 return 1;
             return 0;
         }
-
-        //public void SqlUpdate(int id , string name, DateTime dob, bool isDelete=false)
-        //{
-        //    var isDeleteProperty = 0;
-        //    var obj = new SqlConn();
-        //    var connString = @"Data Source=" + obj._dataSource + "; Initial Catalog=" + obj._dataBase +
-        //                     ";Persist Security Info = True; User ID=" + obj._userName + ";Password=" + obj._password;
-        //    var conn = new SqlConnection(connString);
-        //    try
-        //    {
-        //        Console.WriteLine("Opening Connection...");
-        //        conn.Open();
-        //        Console.WriteLine("Connection Established ");
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        Console.WriteLine("Error: " + e.Message);
-        //        throw;
-        //    }
-        //    List<Employee>
-        //    if (obj._)
-        //    {
-
-        //    }
-        //}
     }
 }

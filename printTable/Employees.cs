@@ -108,15 +108,15 @@ namespace printTable
 
         public static void ListEmployees(string filterBy)
         {
-            if (filterBy[0] == '<'||filterBy[0] == '>')
+            if (filterBy[0] == '<')
             {
-                var filterByNumber = Convert.ToByte(filterBy.Substring(1));
-                var compareOption = filterBy[0];
-                var employees = SqlConn.SqlPullEmployees(filterByNumber, compareOption);
-                //var result = from emp in EmpList
-                //             orderby emp.Id
-                //             where emp.IsDelete != true && ((int)((DateTime.Now - emp.DateOfBirth).TotalDays / 365.255)) <= Convert.ToInt32(filterBy.Substring(1))
-                //             select emp;
+                //var filterByNumber = Convert.ToByte(filterBy.Substring(1));
+                //var compareOption = filterBy[0];
+                var employees = SqlConn.SqlPullEmployees();
+                var result = from emp in employees
+                             orderby emp.Id
+                             where emp.IsDelete != true && ((int)((DateTime.Now - emp.DateOfBirth).TotalDays / 365.255)) <= Convert.ToInt32(filterBy.Substring(1))
+                             select emp;
 
                 Console.WriteLine($"|{"ID",3}|{"Name",7}|{"DOB",8}|");
                 foreach (var emp in employees)
@@ -124,19 +124,21 @@ namespace printTable
                     Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:MM/dd/yyyy} ");
                 }
             }
-            //else if (filterBy[0] == '>')
-            //{
-            //    var filterByNumber = Convert.ToByte(filterBy.Substring(1));
-            //    var result = from emp in EmpList
-            //                 orderby emp.Id
-            //                 where emp.IsDelete != true && ((int)((DateTime.Now - emp.DateOfBirth).TotalDays / 365.255)) >= Convert.ToInt32(filterBy.Substring(1))
-            //                 select emp;
-            //    Console.WriteLine($"|{"ID",3}|{"Name",7}|{"DOB",8}|");
-            //    foreach (var emp in result)
-            //    {
-            //        Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:MM/dd/yyyy} ");
-            //    }
-            //}
+            else if (filterBy[0] == '>')
+            {
+                //var filterByNumber = Convert.ToByte(filterBy.Substring(1));
+                //var compareOption = filterBy[0];
+                var employees = SqlConn.SqlPullEmployees();
+                var result = from emp in employees
+                             orderby emp.Id
+                             where emp.IsDelete != true && ((int)((DateTime.Now - emp.DateOfBirth).TotalDays / 365.255)) >= Convert.ToInt32(filterBy.Substring(1))
+                             select emp;
+                Console.WriteLine($"|{"ID",3}|{"Name",7}|{"DOB",8}|");
+                foreach (var emp in result)
+                {
+                    Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:MM/dd/yyyy} ");
+                }
+            }
             else
             {
                 var employees = SqlConn.SqlPullEmployees(filterBy);
