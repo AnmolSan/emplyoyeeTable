@@ -168,7 +168,7 @@ namespace printTable
             var dateOnly = employee.DateOfBirth.Date;
             cmd.CommandType = CommandType.Text;
             cmd.CommandText = "UPDATE empTable SET Id = "+employee.Id+",Name = '"+employee.Name+"',DOB = '"+dateOnly.ToString("MM/dd/yyyy")+"' ,isDelete = "+IsDeleted(employee.IsDelete)+" WHERE Id ="+id;
-            Console.WriteLine("Database Updated");
+            //Console.WriteLine("Database Updated");
             cmd.Connection = Conn();
             cmd.ExecuteNonQuery();
         }

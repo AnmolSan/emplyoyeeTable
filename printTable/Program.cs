@@ -49,15 +49,29 @@ namespace printTable
                 var selection = Console.ReadLine();
                 if (selection == "1")
                 {
+                    var flag = false;
+                    do
+                    {
+                        try
+                        {
+                            Console.WriteLine("\nYou selected option 1 - Add Employee, please provide the following information");
+                            Console.Write("Name - ");
+                            var name = Convert.ToString(Console.ReadLine());
+                            Console.Write("ID no - ");
+                            var id = int.Parse(Console.ReadLine());
+                            Console.Write("DOB - ");
+                            var dob = Convert.ToString(Console.ReadLine());
+                            flag = Employees.AddEmp(id, name, dob);
+                        }
+                        catch (FormatException formatException)
+                        {
+                            Console.WriteLine(formatException.Message);
+                            Console.WriteLine("ID should me unique and Integer");
+
+                        }
+                    } while (!flag);
                     
-                    Console.WriteLine("\nYou selected option 1 - Add Employee, please provide the following information");
-                    Console.Write("Name - ");
-                    var name  = Convert.ToString(Console.ReadLine());
-                    Console.Write("ID no - ");
-                    var id = int.Parse(Console.ReadLine());
-                    Console.Write("DOB - ");
-                    var dob = Convert.ToString(Console.ReadLine());
-                    Employees.AddEmp(id,name,dob);
+                    
                 }
                 else if (selection == "2")
                 {

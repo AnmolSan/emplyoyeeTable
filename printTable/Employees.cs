@@ -1,4 +1,5 @@
-﻿using System.Net.Mail;
+﻿using System.Data.SqlClient;
+using System.Net.Mail;
 
 namespace printTable
 {
@@ -19,31 +20,33 @@ namespace printTable
         {
             try
             {
-                if (IsUnique(id)&&!string.IsNullOrWhiteSpace(name)&&!string.IsNullOrWhiteSpace(dob))
-                {
-                    SqlConn.SqlInsert(id,name, Convert.ToDateTime(dob));
-                    //EmpList.Add(new Employee(id, name, Convert.ToDateTime(dob)));
-                    Console.WriteLine("Your information is saved in the system");
-                    return true;
-                }
-
-                Console.WriteLine("Employee Number should be a unique number");
-
+                SqlConn.SqlInsert(id, name, Convert.ToDateTime(dob));
+                //EmpList.Add(new Employee(id, name, Convert.ToDateTime(dob)));
+                Console.WriteLine("Your information is saved in the system");
+                return true;
 
             }
-            catch (ArgumentException e)
+            catch (ArgumentException exception)
             {
 
-                Console.WriteLine($"\n{e.Message}");
+                Console.WriteLine($"\n{exception.Message}");
                 Console.WriteLine("Please enter ID, Name and Date of birth fashion\n");
             }
-            catch (FormatException e)
+            catch (FormatException exception)
             {
-                Console.WriteLine($"\n{e.Message}");
+                Console.WriteLine($"\n{exception.Message}");
                 Console.WriteLine("Please Enter date in DD:MM:YYYY fashion");
             }
-            return false;
+            catch (SqlException exception)
+            {
+                if (exception.Number == 2627)
+                {
+                    
+                    Console.WriteLine("{0} \nEmployee ID must be a unique number", exception.Message);
+                }
+            }
 
+            return false;
         }
 
         public static void UpdateEmp(int id)
@@ -74,6 +77,7 @@ namespace printTable
                 if (!string.IsNullOrWhiteSpace(newDob))
                     employee.DateOfBirth = DateTime.Parse(newDob);
                 SqlConn.SqlUpdate(employee,id);
+                Console.WriteLine("Database Updated");
             }
             catch (Exception e)
             {
@@ -96,7 +100,6 @@ namespace printTable
             var employees = SqlConn.SqlPullEmployees();
             var result = from emp in employees
                          orderby emp.Id
-                         where emp.IsDelete != true
                          select emp;
 
             Console.WriteLine($"|{"ID",3}|{"Name",7}|{"DOB",8}|");
@@ -119,7 +122,7 @@ namespace printTable
                              select emp;
 
                 Console.WriteLine($"|{"ID",3}|{"Name",7}|{"DOB",8}|");
-                foreach (var emp in employees)
+                foreach (var emp in result)
                 {
                     Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:MM/dd/yyyy} ");
                 }
