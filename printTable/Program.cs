@@ -47,64 +47,67 @@ namespace printTable
                 Console.WriteLine(
                     "\nPlease Select the action you would like to take\n1 - Add Employee\n2 - Update Employee\n3 - Delete Employe\n4 - List Employee\n");
                 var selection = Console.ReadLine();
-                if (selection == "1")
+                switch (selection)
                 {
-                    var flag = false;
-                    do
+                    case "1":
                     {
-                        try
+                        var flag = false;
+                        do
                         {
-                            Console.WriteLine("\nYou selected option 1 - Add Employee, please provide the following information");
-                            Console.Write("Name - ");
-                            var name = Convert.ToString(Console.ReadLine());
-                            Console.Write("ID no - ");
-                            var id = int.Parse(Console.ReadLine());
-                            Console.Write("DOB - ");
-                            var dob = Convert.ToString(Console.ReadLine());
-                            flag = Employees.AddEmp(id, name, dob);
-                        }
-                        catch (FormatException formatException)
-                        {
-                            Console.WriteLine(formatException.Message);
-                            Console.WriteLine("ID should me unique and Integer");
+                            try
+                            {
+                                Console.WriteLine("\nYou selected option 1 - Add Employee, please provide the following information");
+                                Console.Write("Name - ");
+                                var name = Convert.ToString(Console.ReadLine());
+                                Console.Write("ID no - ");
+                                var id = int.Parse(Console.ReadLine());
+                                Console.Write("DOB - ");
+                                var dob = Convert.ToString(Console.ReadLine());
+                                flag = Employees.AddEmp(id, name, dob);
+                            }
+                            catch (FormatException formatException)
+                            {
+                                Console.WriteLine(formatException.Message);
+                                Console.WriteLine("ID should me unique and Integer");
 
-                        }
-                    } while (!flag);
-                    
-                    
-                }
-                else if (selection == "2")
-                {
-                    Console.WriteLine("\nYou selected option 2 - Update Employee, please provide the Employee Number to update");
-                    var id = int.Parse(Console.ReadLine());
-                    Employees.UpdateEmp(id);
-                }
-                else if (selection == "3")
-                {
-                    Console.WriteLine("\nYou selected option 3 - Delete Employee, please provide the Employee Number to Delete");
-                    var id = int.Parse(Console.ReadLine());
-                    Employees.IsDelete(id,true);
-                    
-                }
-                else if (selection == "4")
-                {
-                    Console.WriteLine("\nYou selected option 4 - List Employee");
-                    Console.WriteLine("\nSearchby Name or Age (format - <A or >A)");
-                    var input = Console.ReadLine();
-                    if (string.IsNullOrEmpty(input))
-                        Employees.ListEmployees();
-                    else
-                    {
-                        Employees.ListEmployees(input);
-                        Console.WriteLine("control");
+                            }
+                        } while (!flag);
+
+                        break;
                     }
-                        
-                        
-                    
-                }
-                else
-                {
-                    Console.WriteLine("\nPlease Enter Number between 1 to 4");
+                    case "2":
+                    {
+                        Console.WriteLine("\nYou selected option 2 - Update Employee, please provide the Employee Number to update");
+                        var id = int.Parse(Console.ReadLine());
+                        var flag = Employees.UpdateEmp(id);
+
+                        break;
+                    }
+                    case "3":
+                    {
+                        Console.WriteLine("\nYou selected option 3 - Delete Employee, please provide the Employee Number to Delete");
+                        var id = int.Parse(Console.ReadLine());
+                        Employees.IsDelete(id,true);
+                        break;
+                    }
+                    case "4":
+                    {
+                        Console.WriteLine("\nYou selected option 4 - List Employee");
+                        Console.WriteLine("\nSearchby Name or Age (format - <A or >A)");
+                        var input = Console.ReadLine();
+                        if (string.IsNullOrEmpty(input))
+                            Employees.ListEmployees();
+                        else
+                        {
+                            Employees.ListEmployees(input);
+                            Console.WriteLine("control");
+                        }
+
+                        break;
+                    }
+                    default:
+                        Console.WriteLine("\nPlease Enter Number between 1 to 4");
+                        break;
                 }
             }
 

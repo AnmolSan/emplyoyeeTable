@@ -1,5 +1,9 @@
-﻿using System.Data.SqlClient;
+﻿using System.Data;
+using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Net.Mail;
+using System.Text;
+
 
 namespace printTable
 {
@@ -10,21 +14,44 @@ namespace printTable
             return new Employees();
         }
 
-        private static readonly List<Employee> EmpList = new List<Employee>();
+        //private static readonly List<Employee> EmpList = new List<Employee>();
 
-        public int Count = EmpList.Count;
+        //public int Count = EmpList.Count;
 
-        
+        private static SqlConnection Con = new SqlConnection("Data Source=SANKALP;Initial Catalog=Employees;Persist Security Info=True;User ID=sqlDatabaseForEmployee;Password=1234");
 
         public static bool AddEmp(int id, string name, string dob)
         {
             try
             {
-                SqlConn.SqlInsert(id, name, Convert.ToDateTime(dob));
-                //EmpList.Add(new Employee(id, name, Convert.ToDateTime(dob)));
-                Console.WriteLine("Your information is saved in the system");
-                return true;
+                var date = Convert.ToDateTime(dob);
+                
+                using (var cmd = new SqlCommand("dbo.insert_sp", Con))
+                {
+                    
+                    cmd.CommandTimeout = 0;
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.Add("@Id", SqlDbType.Int).Value=id;
+                    cmd.Parameters.Add("@Name", SqlDbType.VarChar).Value=name;
+                    cmd.Parameters.Add("@DOB", SqlDbType.Date).Value=date;
+                    try
+                    {
+                        Con.Open();
+                        if (cmd.ExecuteNonQuery() <= 0) return false;
+                        Console.WriteLine("Your information is saved in the system");
+                        return true;
 
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+
+                    }
+                    finally
+                    {
+                        Con.Close();
+                    }
+                }
             }
             catch (ArgumentException exception)
             {
@@ -37,75 +64,218 @@ namespace printTable
                 Console.WriteLine($"\n{exception.Message}");
                 Console.WriteLine("Please Enter date in DD:MM:YYYY fashion");
             }
-            catch (SqlException exception)
-            {
-                if (exception.Number == 2627)
-                {
-                    
-                    Console.WriteLine("{0} \nEmployee ID must be a unique number", exception.Message);
-                }
-            }
-
+            
             return false;
+
         }
 
-        public static void UpdateEmp(int id)
+        public static bool UpdateEmp(int id)
         {
             try
             {
-                var employee = SqlConn.SqlPullEmployees(id);
-                Console.WriteLine($"Current Data \n{employee.Id} {employee.Name} {employee.DateOfBirth:dd/MM/yyyy}");
-                if (employee.IsDelete == true)
+                var employee = new Employee();
+                using (var cmd = new SqlCommand("dbo.retriveData_sp;6", Con))
+                {
+
+                    cmd.CommandTimeout = 0;
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.Add("@Id", SqlDbType.Int).Value = id;
+                    cmd.Connection = SqlConn.Conn();
+
+                    try
+                    {
+                        var dataRead = cmd.ExecuteReader();
+
+                        while (dataRead.Read())
+                        {
+                            employee.Id = (int) dataRead["Id"];
+                            employee.Name = (string) dataRead["Name"];
+                            employee.DateOfBirth = (DateTime) dataRead["DOB"];
+                            employee.IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]));
+
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+
+                    }
+
+
+                }
+
+                var isDelete = true;
+                if (employee.IsDelete)
                 {
                     Console.WriteLine("Do want to restore the employee details (yes/no)");
                     var answer = Console.ReadLine();
+                   
                     if (!string.IsNullOrWhiteSpace(answer) && answer.ToLower().Contains('y'))
-                        employee.IsDelete = false;
+                        isDelete = false;
                 }
-                Console.Write("\nID - ");
-                var newId = Console.ReadLine();
+                Console.WriteLine($"Current Data \n{employee.Id} {employee.Name} {employee.DateOfBirth:dd/MM/yyyy}");
                 Console.Write("\nName - ");
                 var newName = Console.ReadLine();
                 Console.Write("\nDOB - ");
                 var newDob = Console.ReadLine();
-                if (!string.IsNullOrWhiteSpace(newId))
-                    employee.Id = Convert.ToInt32(newId);
+                using (var cmd = new SqlCommand("dbo.update_sp", Con))
+                {
+                    cmd.CommandTimeout = 0;
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.Add("@Id", SqlDbType.Int).Value = employee.Id;
+                    if (newName!=string.Empty)
+                        cmd.Parameters.Add("@new_Name", SqlDbType.VarChar).Value = newName;
+                    else
+                        cmd.Parameters.Add("@new_Name", SqlDbType.VarChar).Value = null;
 
-                if (!string.IsNullOrWhiteSpace(newName))
-                    employee.Name = newName;
+                    if (newDob!=string.Empty)
+                        cmd.Parameters.Add("@new_DOB", SqlDbType.Date).Value = Convert.ToDateTime(newDob).Date;
+                    else
+                        cmd.Parameters.Add("@new_DOB", SqlDbType.Date).Value = null;
 
-                if (!string.IsNullOrWhiteSpace(newDob))
-                    employee.DateOfBirth = DateTime.Parse(newDob);
-                SqlConn.SqlUpdate(employee,id);
-                Console.WriteLine("Database Updated");
+                    if (isDelete==false)
+                        cmd.Parameters.Add("@new_IsDelete", SqlDbType.Bit).Value = SqlConn.IsDeleted(isDelete);
+                    else
+                        cmd.Parameters.Add("@new_IsDelete", SqlDbType.Bit).Value = null;
+                    try
+                    {
+                        Con.Open();
+                        if (cmd.ExecuteNonQuery() <= 0) return false;
+                        Console.WriteLine("Your information is updated in the system");
+                        return true;
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+
+                    }
+                    finally
+                    {
+                        Con.Close();
+                    }
+
+                }
+
             }
             catch (Exception e)
             {
                 Console.WriteLine($"\n{e.Message}");
             }
+
+            return false;
         }
 
 
-        public static void IsDelete(int id, bool option)
+        public static bool IsDelete(int id, bool option)
         {
-            var employee = SqlConn.SqlPullEmployees(id);
+            var employee = new Employee();
+            using (var cmd = new SqlCommand("dbo.retriveData_sp;2", Con))
+            {
+
+                cmd.CommandTimeout = 0;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@Id", SqlDbType.Int).Value = id;
+                cmd.Connection = SqlConn.Conn();
+
+                try
+                {
+                    var dataRead = cmd.ExecuteReader();
+
+                    while (dataRead.Read())
+                    {
+                        employee.Id = (int) dataRead["Id"];
+                        employee.Name = (string) dataRead["Name"];
+                        employee.DateOfBirth = (DateTime) dataRead["DOB"];
+                        employee.IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]));
+
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+
+                }
+
+
+            }
             //var result = employees.FirstOrDefault(c => c.Id == id);
-            employee.IsDelete = option;
-            SqlConn.SqlUpdate(employee,id);
-            Console.WriteLine(option ? "Employee Deleted..." : "Employee Updated...");
+
+            using (var cmd = new SqlCommand("dbo.update_sp", Con))
+            {
+                cmd.CommandTimeout = 0;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@Id", SqlDbType.Int).Value = id;
+                cmd.Parameters.Add("@new_IsDelete", SqlDbType.Bit).Value = SqlConn.IsDeleted(option);
+                try
+                {
+                    Con.Open();
+                    if (cmd.ExecuteNonQuery() <= 0) return false;
+                    Console.WriteLine("Your information is updated in the system");
+                    return true;
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+
+                }
+                finally
+                {
+                    Con.Close();
+                }
+                //SqlConn.SqlUpdate(employee,id);
+            }
+
+            return false;
         }
 
         public static void ListEmployees()
         {
-            var employees = SqlConn.SqlPullEmployees();
+            //var employees = SqlConn.SqlPullEmployees();
+            
+            var employees = new List<Employee>();
+            using (var cmd = new SqlCommand("dbo.retriveData_sp", Con))
+            {
+
+                cmd.CommandTimeout = 0;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Connection = SqlConn.Conn();
+                
+                try
+                {
+                    var dataRead = cmd.ExecuteReader();
+                    
+                    while (dataRead.Read())
+                    {
+                        employees.Add(new Employee
+                        {
+                            Id = (int)dataRead["Id"],
+                            Name = (string)dataRead["Name"],
+                            DateOfBirth = (DateTime)dataRead["DOB"],
+                            IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]))
+                        });
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+
+                }
+                
+              
+            }
             var result = from emp in employees
-                         orderby emp.Id
-                         select emp;
+                orderby emp.Id
+                select emp;
 
             Console.WriteLine($"|{"ID",3}|{"Name",7}|{"DOB",8}|");
             foreach (var emp in result)
             {
-                Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:MM/dd/yyyy} ");
+                Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:dd/MM/yyyy} ");
             }
         }
 
@@ -113,64 +283,159 @@ namespace printTable
         {
             if (filterBy[0] == '<')
             {
-                //var filterByNumber = Convert.ToByte(filterBy.Substring(1));
-                //var compareOption = filterBy[0];
-                var employees = SqlConn.SqlPullEmployees();
+                var filterByNumber = Convert.ToByte(filterBy.Substring(1));
+                var employees = new List<Employee>();
+                using (var cmd = new SqlCommand("dbo.retriveData_sp;4", Con))
+                {
+
+                    cmd.CommandTimeout = 0;
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Connection = SqlConn.Conn();
+                    cmd.Parameters.Add("@filterByNumber", SqlDbType.Int).Value = filterByNumber ;
+
+                    try
+                    {
+                        var dataRead = cmd.ExecuteReader();
+
+                        while (dataRead.Read())
+                        {
+                            employees.Add(new Employee
+                            {
+                                Id = (int)dataRead["Id"],
+                                Name = (string)dataRead["Name"],
+                                DateOfBirth = (DateTime)dataRead["DOB"],
+                                IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]))
+                            });
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+
+                    }
+
+
+                }
                 var result = from emp in employees
-                             orderby emp.Id
-                             where emp.IsDelete != true && ((int)((DateTime.Now - emp.DateOfBirth).TotalDays / 365.255)) <= Convert.ToInt32(filterBy.Substring(1))
-                             select emp;
+                    orderby emp.Id
+                    select emp;
 
                 Console.WriteLine($"|{"ID",3}|{"Name",7}|{"DOB",8}|");
                 foreach (var emp in result)
                 {
-                    Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:MM/dd/yyyy} ");
+                    Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:dd/MM/yyyy} ");
                 }
             }
             else if (filterBy[0] == '>')
             {
-                //var filterByNumber = Convert.ToByte(filterBy.Substring(1));
-                //var compareOption = filterBy[0];
-                var employees = SqlConn.SqlPullEmployees();
+                var filterByNumber = Convert.ToByte(filterBy.Substring(1));
+                var employees = new List<Employee>();
+                using (var cmd = new SqlCommand("dbo.retriveData_sp;5", Con))
+                {
+
+                    cmd.CommandTimeout = 0;
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Connection = SqlConn.Conn();
+                    cmd.Parameters.Add("@filterByNumber", SqlDbType.Int).Value = filterByNumber;
+
+                    try
+                    {
+                        var dataRead = cmd.ExecuteReader();
+
+                        while (dataRead.Read())
+                        {
+                            employees.Add(new Employee
+                            {
+                                Id = (int)dataRead["Id"],
+                                Name = (string)dataRead["Name"],
+                                DateOfBirth = (DateTime)dataRead["DOB"],
+                                IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]))
+                            });
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+
+                    }
+
+
+                }
                 var result = from emp in employees
-                             orderby emp.Id
-                             where emp.IsDelete != true && ((int)((DateTime.Now - emp.DateOfBirth).TotalDays / 365.255)) >= Convert.ToInt32(filterBy.Substring(1))
-                             select emp;
+                    orderby emp.Id
+                    select emp;
+
                 Console.WriteLine($"|{"ID",3}|{"Name",7}|{"DOB",8}|");
                 foreach (var emp in result)
                 {
-                    Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:MM/dd/yyyy} ");
+                    Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:dd/MM/yyyy} ");
                 }
             }
             else
             {
-                var employees = SqlConn.SqlPullEmployees(filterBy);
-                //var result = from emp in EmpList
-                //             orderby emp.Id
-                //             where emp.IsDelete != true && emp.Name.Contains(filterBy)
-                //             select emp;
+                    
+                var employees = new List<Employee>();
+                using (var cmd = new SqlCommand("dbo.retriveData_sp;3", Con))
+                {
+
+                    cmd.CommandTimeout = 0;
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Connection = SqlConn.Conn();
+                    cmd.Parameters.Add("@filterByName", SqlDbType.VarChar).Value = '%'+filterBy+'%';
+
+                    try
+                    {
+                        var dataRead = cmd.ExecuteReader();
+
+                        while (dataRead.Read())
+                        {
+                            employees.Add(new Employee
+                            {
+                                Id = (int)dataRead["Id"],
+                                Name = (string)dataRead["Name"],
+                                DateOfBirth = (DateTime)dataRead["DOB"],
+                                IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]))
+                            });
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+
+                    }
+
+
+                }
+                var result = from emp in employees
+                    orderby emp.Id
+                    select emp;
+
                 Console.WriteLine($"|{"ID",3}|{"Name",7}|{"DOB",8}|");
-                foreach (var emp in employees)
+                foreach (var emp in result)
                 {
-                    Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:MM/dd/yyyy} ");
+                    Console.WriteLine($" {emp.Id,3} {emp.Name,7} {emp.DateOfBirth:dd/MM/yyyy} ");
                 }
+                
             }
 
 
         }
 
-        private static bool IsUnique(int id)
-        {
-            foreach (var variable in EmpList)
-            {
-                if (variable.Id == id)
-                {
-                    return false;
-                }
-            }
+        //private static bool IsUnique(int id)
+        //{
+        //    foreach (var variable in EmpList)
+        //    {
+        //        if (variable.Id == id)
+        //        {
+        //            return false;
+        //        }
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
     }
 
 }
