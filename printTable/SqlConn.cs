@@ -10,7 +10,7 @@ namespace printTable
     {
         private string _dataSource ; //Server
         private string _dataBase ; //database name
-        private string _userName;
+        private string _userName;   //login Name
         private string _password;  // password
         private SqlConn()
         {
@@ -20,7 +20,8 @@ namespace printTable
             this._password = "1234";
         }
 
-        public SqlConn(string serverName, string dataBaseName, string userName, string password):this()
+        public SqlConn(string serverName, string dataBaseName, string userName, string password)
+            :this()
         {
             this._dataSource = @serverName;
             this._dataBase = dataBaseName;
@@ -171,19 +172,5 @@ namespace printTable
         //    cmd.Connection = Conn();
         //    cmd.ExecuteNonQuery();
         //}
-
-        public static bool IsDeleted(int isDelete)
-        {
-            if(isDelete == 1)
-                return true;
-            return false;
-        }
-    
-        public static int IsDeleted(bool isDelete)
-        {
-            if (isDelete == true)
-                return 1;
-            return 0;
-        }
     }
 }

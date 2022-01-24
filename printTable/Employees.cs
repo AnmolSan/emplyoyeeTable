@@ -91,7 +91,7 @@ namespace printTable
                             employee.Id = (int) dataRead["Id"];
                             employee.Name = (string) dataRead["Name"];
                             employee.DateOfBirth = (DateTime) dataRead["DOB"];
-                            employee.IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]));
+                            employee.IsDelete = IsDeleted(Convert.ToByte(dataRead["isDelete"]));
 
                         }
 
@@ -135,7 +135,7 @@ namespace printTable
                         cmd.Parameters.Add("@new_DOB", SqlDbType.Date).Value = null;
 
                     if (isDelete==false)
-                        cmd.Parameters.Add("@new_IsDelete", SqlDbType.Bit).Value = SqlConn.IsDeleted(isDelete);
+                        cmd.Parameters.Add("@new_IsDelete", SqlDbType.Bit).Value = IsDeleted(isDelete);
                     else
                         cmd.Parameters.Add("@new_IsDelete", SqlDbType.Bit).Value = null;
                     try
@@ -171,6 +171,7 @@ namespace printTable
         public static bool IsDelete(int id, bool option)
         {
             var employee = new Employee();
+            //pull data from server using id a argument 
             using (var cmd = new SqlCommand("dbo.retriveData_sp;2", Con))
             {
 
@@ -188,7 +189,7 @@ namespace printTable
                         employee.Id = (int) dataRead["Id"];
                         employee.Name = (string) dataRead["Name"];
                         employee.DateOfBirth = (DateTime) dataRead["DOB"];
-                        employee.IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]));
+                        employee.IsDelete = IsDeleted(Convert.ToByte(dataRead["isDelete"]));
 
                     }
 
@@ -208,7 +209,7 @@ namespace printTable
                 cmd.CommandTimeout = 0;
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.Add("@Id", SqlDbType.Int).Value = id;
-                cmd.Parameters.Add("@new_IsDelete", SqlDbType.Bit).Value = SqlConn.IsDeleted(option);
+                cmd.Parameters.Add("@new_IsDelete", SqlDbType.Bit).Value = IsDeleted(option);
                 try
                 {
                     Con.Open();
@@ -255,7 +256,7 @@ namespace printTable
                             Id = (int)dataRead["Id"],
                             Name = (string)dataRead["Name"],
                             DateOfBirth = (DateTime)dataRead["DOB"],
-                            IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]))
+                            IsDelete = IsDeleted(Convert.ToByte(dataRead["isDelete"]))
                         });
                     }
 
@@ -304,7 +305,7 @@ namespace printTable
                                 Id = (int)dataRead["Id"],
                                 Name = (string)dataRead["Name"],
                                 DateOfBirth = (DateTime)dataRead["DOB"],
-                                IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]))
+                                IsDelete = IsDeleted(Convert.ToByte(dataRead["isDelete"]))
                             });
                         }
 
@@ -350,7 +351,7 @@ namespace printTable
                                 Id = (int)dataRead["Id"],
                                 Name = (string)dataRead["Name"],
                                 DateOfBirth = (DateTime)dataRead["DOB"],
-                                IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]))
+                                IsDelete = IsDeleted(Convert.ToByte(dataRead["isDelete"]))
                             });
                         }
 
@@ -396,7 +397,7 @@ namespace printTable
                                 Id = (int)dataRead["Id"],
                                 Name = (string)dataRead["Name"],
                                 DateOfBirth = (DateTime)dataRead["DOB"],
-                                IsDelete = SqlConn.IsDeleted(Convert.ToByte(dataRead["isDelete"]))
+                                IsDelete = IsDeleted(Convert.ToByte(dataRead["isDelete"]))
                             });
                         }
 
@@ -424,18 +425,20 @@ namespace printTable
 
         }
 
-        //private static bool IsUnique(int id)
-        //{
-        //    foreach (var variable in EmpList)
-        //    {
-        //        if (variable.Id == id)
-        //        {
-        //            return false;
-        //        }
-        //    }
+        private static bool IsDeleted(int isDelete)
+        {
+            if (isDelete == 1)
+                return true;
+            return false;
+        }
 
-        //    return true;
-        //}
+        private static int IsDeleted(bool isDelete)
+        {
+            if (isDelete == true)
+                return 1;
+            return 0;
+        }
+
     }
 
 }
